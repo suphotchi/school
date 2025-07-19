@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกกิจกรรมของโรงเรียน</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .gradient-purple {
+            background-image: linear-gradient(to right, #a855f7, #6366f1);
+        }
+        .gradient-text {
+            background: linear-gradient(to right, #a855f7, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+        }
+        .logo-shadow {
+            filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.07)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.06));
+        }
+        /* Quill Minimal Toolbar */
+        .ql-toolbar.ql-snow {
+            border-radius: 0.5rem 0.5rem 0 0;
+            border-color: #d1d5db;
+        }
+        .ql-container.ql-snow {
+            border-radius: 0 0 0.5rem 0.5rem;
+            border-color: #d1d5db;
+            min-height: 150px;
+        }
+        /* Custom styles for Flatpickr */
+        .flatpickr-day.selected {
+            background: #a855f7;
+            border-color: #a855f7;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="login-page" class="min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md">
+            <div class="bg-white rounded-xl shadow-2xl p-8">
+                <div class="text-center mb-8">
+                    <img id="login-logo" src="" alt="School Logo" class="w-24 h-24 mx-auto mb-4 logo-shadow">
+                    <h1 id="login-system-name" class="text-2xl font-bold text-gray-800"></h1>
+                    <h2 id="login-school-name" class="text-lg text-gray-500"></h2>
+                </div>
+                <form id="login-form">
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
+                        <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="กรอกอีเมลของคุณ" required>
+                    </div>
+                    <div class="mb-6">
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่าน</label>
+                        <input type="password" id="password" name="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" placeholder="กรอกรหัสผ่าน" required>
+                    </div>
+                    <button type="submit" class="w-full gradient-purple text-white font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity duration-300 shadow-lg">
+                        เข้าสู่ระบบ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-page" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4 order-2">
+                    <div class="text-right">
+                        <p id="user-display-name" class="font-semibold text-gray-800"></p>
+                        <p id="user-role" class="text-sm text-gray-500 capitalize"></p>
+                    </div>
+                    <button id="logout-btn" class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-100 rounded-lg hover:bg-red-200 transition-colors">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span class="hidden md:inline">ออกจากระบบ</span>
+                    </button>
+                </div>
+
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3">
+                    <img id="header-logo" src="" alt="School Logo" class="w-12 h-12 logo-shadow">
+                    <div class="hidden sm:block">
+                        <h1 id="header-system-name" class="text-xl font-bold text-gray-800"></h1>
+                        <p id="header-school-name" class="text-sm text-gray-500"></p>
+                    </div>
+                </div>
+                 <div class="order-1"></div>
+            </div>
+        </header>
+
+        <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                        <button id="tab-btn-flag" data-tab="flag" class="main-tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-lg">
+                            กิจกรรมหน้าเสาธง
+                        </button>
+                        <button id="tab-btn-homeroom" data-tab="homeroom" class="main-tab-btn whitespace-nowrap py-3 px-4 border-b-2 font-medium text-lg">
+                            กิจกรรมโฮมรูม
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <div id="tab-content-area">
+                <div id="flag-content" class="tab-pane">
+                    <div class="flex items-center gap-2 mb-6">
+                        <button data-type="flag" data-view="dashboard" class="sub-tab-btn text-gray-600 py-2 px-5 rounded-full font-medium transition-all">แดชบอร์ด</button>
+                        <button data-type="flag" data-view="form" class="sub-tab-btn text-gray-600 py-2 px-5 rounded-full font-medium transition-all">บันทึกข้อมูล</button>
+                    </div>
+                    <div class="view-container" data-type="flag" data-view="dashboard">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-4">สรุปผลกิจกรรมหน้าเสาธง</h3>
+                                <div class="h-64 flex items-center justify-center">
+                                    <canvas id="flag-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-4">รายการบันทึกล่าสุด</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left">
+                                        <thead class="text-sm text-gray-500 uppercase bg-gray-50">
+                                            <tr>
+                                                <th class="p-3">วันที่</th>
+                                                <th class="p-3">ผู้บันทึก</th>
+                                                <th class="p-3">สถานะ</th>
+                                                <th class="p-3 text-center">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="flag-table-body">
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="view-container hidden" data-type="flag" data-view="form">
+                        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+                           <h3 class="text-2xl font-semibold mb-6 gradient-text">บันทึกกิจกรรมหน้าเสาธง</h3>
+                            <form id="flag-log-form">
+                                <div class="mb-6">
+                                    <label for="flag-date" class="block text-sm font-medium text-gray-700 mb-2">วันที่ปฏิบัติหน้าที่</label>
+                                    <input type="text" id="flag-date" name="date" class="w-full border-gray-300 rounded-lg shadow-sm" placeholder="กรุณาเลือกวันที่" required>
+                                </div>
+                                <div class="mb-6">
+                                    <label for="flag-details-editor" class="block text-sm font-medium text-gray-700 mb-2">รายละเอียดการปฏิบัติหน้าที่</label>
+                                    <div id="flag-details-editor"></div>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">รูปภาพประกอบ (ถ้ามี)</label>
+                                    <div id="flag-image-uploads" class="space-y-3">
+                                        <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                        <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                    </div>
+                                    <button type="button" id="add-flag-image" class="mt-3 text-purple-600 hover:text-purple-800 text-sm font-medium"><i class="fas fa-plus mr-1"></i> เพิ่มรูปภาพ</button>
+                                </div>
+                                <div class="text-right">
+                                    <button type="submit" class="gradient-purple text-white font-semibold py-2.5 px-8 rounded-lg hover:opacity-90 transition-opacity duration-300 shadow-lg">
+                                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูล
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="homeroom-content" class="tab-pane hidden">
+                    <div class="flex items-center gap-2 mb-6">
+                        <button data-type="homeroom" data-view="dashboard" class="sub-tab-btn text-gray-600 py-2 px-5 rounded-full font-medium transition-all">แดชบอร์ด</button>
+                        <button data-type="homeroom" data-view="form" class="sub-tab-btn text-gray-600 py-2 px-5 rounded-full font-medium transition-all">บันทึกข้อมูล</button>
+                    </div>
+                     <div class="view-container" data-type="homeroom" data-view="dashboard">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-4">สรุปผลกิจกรรมโฮมรูม</h3>
+                                <div class="h-64 flex items-center justify-center">
+                                    <canvas id="homeroom-chart"></canvas>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg">
+                                <h3 class="text-xl font-semibold mb-4">รายการบันทึกล่าสุด</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left">
+                                        <thead class="text-sm text-gray-500 uppercase bg-gray-50">
+                                            <tr>
+                                                <th class="p-3">วันที่</th>
+                                                <th class="p-3">ห้องเรียน</th>
+                                                <th class="p-3">ผู้บันทึก</th>
+                                                <th class="p-3">สถานะ</th>
+                                                <th class="p-3 text-center">จัดการ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="homeroom-table-body">
+                                            </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="view-container hidden" data-type="homeroom" data-view="form">
+                         <div class="bg-white p-6 sm:p-8 rounded-xl shadow-lg max-w-4xl mx-auto">
+                           <h3 class="text-2xl font-semibold mb-6 gradient-text">บันทึกกิจกรรมโฮมรูม</h3>
+                            <form id="homeroom-log-form">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                    <div>
+                                        <label for="homeroom-date" class="block text-sm font-medium text-gray-700 mb-2">วันที่</label>
+                                        <input type="text" id="homeroom-date" name="date" class="w-full border-gray-300 rounded-lg shadow-sm" placeholder="กรุณาเลือกวันที่" required>
+                                    </div>
+                                    <div>
+                                        <label for="homeroom-room" class="block text-sm font-medium text-gray-700 mb-2">ห้องเรียน</label>
+                                        <select id="homeroom-room" name="room" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                                            </select>
+                                    </div>
+                                </div>
+                                <div class="mb-6">
+                                    <label for="homeroom-details-editor" class="block text-sm font-medium text-gray-700 mb-2">รายละเอียดกิจกรรม</label>
+                                    <div id="homeroom-details-editor"></div>
+                                </div>
+                                <div class="mb-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">รูปภาพประกอบ (ถ้ามี)</label>
+                                    <div id="homeroom-image-uploads" class="space-y-3">
+                                        <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                        <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                                    </div>
+                                    <button type="button" id="add-homeroom-image" class="mt-3 text-purple-600 hover:text-purple-800 text-sm font-medium"><i class="fas fa-plus mr-1"></i> เพิ่มรูปภาพ</button>
+                                </div>
+                                <div class="text-right">
+                                    <button type="submit" class="gradient-purple text-white font-semibold py-2.5 px-8 rounded-lg hover:opacity-90 transition-opacity duration-300 shadow-lg">
+                                        <i class="fas fa-save mr-2"></i> บันทึกข้อมูล
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="text-center py-4 text-gray-500 text-sm mt-8">
+            พัฒนาโดย Waiwai Jaidee
+        </footer>
+    </div>
+    
+    <div id="view-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="gradient-purple text-white p-4 rounded-t-xl flex justify-between items-center">
+                <h3 id="view-modal-title" class="text-xl font-semibold">รายละเอียดกิจกรรม</h3>
+                <button class="close-modal-btn text-2xl">&times;</button>
+            </div>
+            <div id="view-modal-body" class="p-6 overflow-y-auto">
+                </div>
+            <div class="p-4 border-t bg-gray-50 rounded-b-xl text-right">
+                <button class="close-modal-btn bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="gradient-purple text-white p-4 rounded-t-xl flex justify-between items-center">
+                <h3 id="edit-modal-title" class="text-xl font-semibold">แก้ไขข้อมูลกิจกรรม</h3>
+                <button class="close-modal-btn text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <form id="edit-log-form">
+                    <input type="hidden" id="edit-log-id">
+                    <input type="hidden" id="edit-log-type">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-2">วันที่</label>
+                            <input type="text" id="edit-date" class="w-full border-gray-300 rounded-lg shadow-sm" required>
+                        </div>
+                        <div id="edit-room-container" class="hidden">
+                            <label for="edit-room" class="block text-sm font-medium text-gray-700 mb-2">ห้องเรียน</label>
+                            <select id="edit-room" class="w-full border-gray-300 rounded-lg shadow-sm" required></select>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="edit-details-editor" class="block text-sm font-medium text-gray-700 mb-2">รายละเอียด</label>
+                        <div id="edit-details-editor"></div>
+                    </div>
+                    <div id="edit-image-container">
+                         <label class="block text-sm font-medium text-gray-700 mb-2">รูปภาพที่มีอยู่</label>
+                         <div id="edit-image-list" class="text-sm text-gray-500"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-4 border-t bg-gray-50 rounded-b-xl text-right space-x-2">
+                <button class="close-modal-btn bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300">ยกเลิก</button>
+                <button id="save-edit-btn" class="gradient-purple text-white font-semibold py-2 px-8 rounded-lg hover:opacity-90">
+                    <i class="fas fa-save mr-2"></i> บันทึกการแก้ไข
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.20.0/dist/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/th.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+    $(document).ready(function() {
+
+        // ========== MOCK DATA ==========
+        const mockData = {
+            config: {
+                siteName: "Waiwai School",
+                systemName: "ระบบบันทึกกิจกรรม",
+                schoolName: "โรงเรียนไวยไยวิทยา",
+                logoUrl: "https://cdn-icons-png.flaticon.com/512/2930/2930195.png"
+            },
+            users: [
+                { id: "u1", email: "teacher1@school.com", password: "password", role: "teacher", displayName: "คุณครูสมศรี", dutyDay: 1 }, // 1 = Monday
+                { id: "u2", email: "director@school.com", password: "password", role: "director", displayName: "ท่าน ผอ.สมหวัง" },
+                { id: "u3", email: "teacher2@school.com", password: "password", role: "teacher", displayName: "คุณครูมานะ", dutyDay: 3 }, // 3 = Wednesday
+            ],
+            rooms: [
+                { id: "r1", name: "ม.1/1" }, { id: "r2", name: "ม.1/2" },
+                { id: "r3", name: "ม.2/1" }, { id: "r4", name: "ม.2/2" },
+            ],
+            teacherRooms: [
+                { userId: "u1", roomIds: ["r1", "r2"] },
+                { userId: "u3", roomIds: ["r3", "r4"] },
+            ],
+            flagLogs: [
+                { id: "fl1", userId: "u1", date: "2025-07-14", details: "<h4>กิจกรรมหน้าเสาธงวันจันทร์</h4><p>นักเรียนเข้าแถวตรงเวลาและร้องเพลงชาติเสียงดังฟังชัด</p>", images: [], status: "approved" },
+                { id: "fl2", userId: "u3", date: "2025-07-16", details: "<h4>กิจกรรมวันพุธ</h4><p>มีนักเรียนมาสาย 2 คน ได้ตักเตือนไปแล้ว</p>", images: [], status: "pending" }
+            ],
+            homeroomLogs: [
+                { id: "hl1", userId: "u1", roomId: "r1", date: "2025-07-15", details: "<h3>อบรมเรื่องความสะอาด</h3><ul><li>เน้นย้ำเรื่องการทิ้งขยะให้ลงถัง</li><li>จัดเวรทำความสะอาดใหม่</li></ul>", images: [], status: "approved" },
+                { id: "hl2", userId: "u3", roomId: "r3", date: "2025-07-17", details: "<p>ติดตามการบ้านวิชาคณิตศาสตร์</p>", images: [], status: "pending" }
+            ]
+        };
+
+        // ========== GLOBAL STATE ==========
+        let currentUser = null;
+        let activeMainTab = 'flag';
+        let activeSubTabs = { flag: 'dashboard', homeroom: 'dashboard' };
+        let chartInstances = { flag: null, homeroom: null };
+        let quillInstances = { mainFlag: null, mainHomeroom: null, edit: null };
+        let flatpickrInstances = {};
+
+        // ========== INITIALIZATION ==========
+        function initializeApp() {
+            // Set site config
+            const { siteName, systemName, schoolName, logoUrl } = mockData.config;
+            document.title = `${systemName} | ${siteName}`;
+            $('#login-logo, #header-logo').attr('src', logoUrl);
+            $('#login-system-name, #header-system-name').text(systemName);
+            $('#login-school-name, #header-school-name').text(schoolName);
+
+            // Check for logged-in user
+            const loggedInUser = localStorage.getItem('schoolAppUser');
+            if (loggedInUser) {
+                currentUser = JSON.parse(loggedInUser);
+                showDashboard();
+            } else {
+                showLoginPage();
+            }
+        }
+
+        // ========== PAGE & VIEW MANAGEMENT ==========
+        function showLoginPage() {
+            $('#login-page').show();
+            $('#dashboard-page').hide();
+        }
+
+        function showDashboard() {
+            $('#login-page').hide();
+            $('#dashboard-page').show();
+            
+            $('#user-display-name').text(currentUser.displayName);
+            $('#user-role').text(currentUser.role);
+            
+            if (currentUser.role !== 'teacher') {
+                 $('button[data-view="form"]').show();
+            }
+
+            renderAll();
+            initializeAllForms();
+        }
+
+        function renderAll() {
+            // Main Tabs
+            $('.main-tab-btn').removeClass('gradient-text border-purple-500').addClass('text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300');
+            $(`#tab-btn-${activeMainTab}`).removeClass('text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300').addClass('gradient-text border-purple-500');
+            $('.tab-pane').hide();
+            $(`#${activeMainTab}-content`).show();
+
+            // Render both sub-tabs to keep their state
+            renderSubTabView('flag');
+            renderSubTabView('homeroom');
+        }
+
+        function renderSubTabView(type) {
+            const activeView = activeSubTabs[type];
+            // Sub Tab Buttons
+            $(`button.sub-tab-btn[data-type="${type}"]`).removeClass('gradient-purple text-white shadow').addClass('bg-gray-200 text-gray-600');
+            $(`button.sub-tab-btn[data-type="${type}"][data-view="${activeView}"]`).removeClass('bg-gray-200 text-gray-600').addClass('gradient-purple text-white shadow');
+            
+            // View Containers
+            $(`.view-container[data-type="${type}"]`).hide();
+            $(`.view-container[data-type="${type}"][data-view="${activeView}"]`).show();
+
+            if (activeView === 'dashboard') {
+                renderDashboard(type);
+            }
+        }
+
+        function renderDashboard(type) {
+            renderChart(type);
+            renderTable(type);
+        }
+
+        // ========== RENDER CHART ==========
+        function renderChart(type) {
+            const logs = mockData[`${type}Logs`];
+            const approved = logs.filter(log => log.status === 'approved').length;
+            const pending = logs.filter(log => log.status === 'pending').length;
+            
+            const ctx = document.getElementById(`${type}-chart`).getContext('2d');
+            if (chartInstances[type]) {
+                chartInstances[type].destroy();
+            }
+            chartInstances[type] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['อนุมัติแล้ว', 'รออนุมัติ'],
+                    datasets: [{
+                        data: [approved, pending],
+                        backgroundColor: ['#4ade80', '#facc15'], // green-400, yellow-400
+                        borderColor: '#ffffff',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Prompt' }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+
+        // ========== RENDER TABLE ==========
+        function renderTable(type) {
+            const logs = mockData[`${type}Logs`];
+            const tableBody = $(`#${type}-table-body`);
+            tableBody.empty();
+
+            if (logs.length === 0) {
+                 tableBody.html(`<tr><td colspan="5" class="text-center p-4 text-gray-500">ยังไม่มีข้อมูล</td></tr>`);
+                 return;
+            }
+
+            const sortedLogs = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedLogs.forEach(log => {
+                const user = mockData.users.find(u => u.id === log.userId);
+                const room = (type === 'homeroom') ? mockData.rooms.find(r => r.id === log.roomId) : null;
+                const statusBadge = log.status === 'approved' 
+                    ? `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">อนุมัติแล้ว</span>`
+                    : `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">รออนุมัติ</span>`;
+
+                const canEdit = currentUser.id === log.userId && log.status === 'pending';
+                const canApprove = currentUser.role === 'director' && log.status === 'pending';
+
+                const row = `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-3">${new Date(log.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })}</td>
+                        ${type === 'homeroom' ? `<td class="p-3">${room ? room.name : '-'}</td>` : ''}
+                        <td class="p-3">${user ? user.displayName : 'ไม่พบผู้ใช้'}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-center">
+                            <button data-id="${log.id}" data-type="${type}" data-action="view" class="action-btn text-blue-500 hover:text-blue-700 mx-1"><i class="fas fa-eye"></i></button>
+                            ${canEdit ? `<button data-id="${log.id}" data-type="${type}" data-action="edit" class="action-btn text-yellow-500 hover:text-yellow-700 mx-1"><i class="fas fa-pencil"></i></button>` : ''}
+                            ${canApprove ? `<button data-id="${log.id}" data-type="${type}" data-action="approve" class="action-btn text-green-500 hover:text-green-700 mx-1"><i class="fas fa-check"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `;
+                 if (type === 'flag') {
+                    const flagTableBody = $('#flag-table-body');
+                    const firstCol = flagTableBody.find('tr:first-child td:first-child');
+                    if (firstCol.attr('colspan') === '4') { // If "no data" message exists
+                        flagTableBody.empty();
+                    }
+                    flagTableBody.append(row);
+                } else {
+                     tableBody.append(row);
+                }
+            });
+             if (type === 'flag') { // Adjust colspan for homeroom table which has one more column
+                $('#homeroom-table-body').find('tr').each(function() {
+                    $(this).find('td:nth-child(2)').after($(this).find('td:nth-child(1)'));
+                });
+            }
+        }
+        
+        // ========== FORM INITIALIZATION ==========
+        function initializeAllForms() {
+            const quillOptions = {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }]
+                    ]
+                }
+            };
+            quillInstances.mainFlag = new Quill('#flag-details-editor', quillOptions);
+            quillInstances.mainHomeroom = new Quill('#homeroom-details-editor', quillOptions);
+            quillInstances.edit = new Quill('#edit-details-editor', quillOptions);
+
+            // Init Flag Datepicker
+            let flagPickerOptions = { locale: "th", dateFormat: "Y-m-d" };
+            if (currentUser.role === 'teacher' && currentUser.dutyDay !== undefined) {
+                flagPickerOptions.enable = [function(date) {
+                    return (date.getDay() === currentUser.dutyDay);
+                }];
+            }
+            flatpickrInstances.flag = flatpickr("#flag-date", flagPickerOptions);
+            
+            // Init Homeroom Datepicker
+            flatpickrInstances.homeroom = flatpickr("#homeroom-date", { locale: "th", dateFormat: "Y-m-d" });
+
+            // Populate homeroom rooms dropdown
+            const userRoomIds = mockData.teacherRooms.find(tr => tr.userId === currentUser.id)?.roomIds || [];
+            const roomSelect = $('#homeroom-room');
+            roomSelect.empty().append('<option value="">-- เลือกห้องเรียน --</option>');
+            mockData.rooms.forEach(room => {
+                if (userRoomIds.includes(room.id) || currentUser.role === 'director') {
+                    roomSelect.append(`<option value="${room.id}">${room.name}</option>`);
+                }
+            });
+        }
+
+        function resetForm(type) {
+             const form = $(`#${type}-log-form`)[0];
+             if (form) form.reset();
+
+             if (type === 'flag' && quillInstances.mainFlag) quillInstances.mainFlag.setText('');
+             if (type === 'homeroom' && quillInstances.mainHomeroom) quillInstances.mainHomeroom.setText('');
+
+             $(`#${type}-image-uploads`).html(`
+                <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                <input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+             `);
+        }
+
+        // ========== EVENT HANDLERS ==========
+
+        // Login
+        $('#login-form').validate({
+            submitHandler: function(form) {
+                const email = $('#email').val();
+                const password = $('#password').val();
+                const user = mockData.users.find(u => u.email === email && u.password === password);
+
+                if (user) {
+                    currentUser = user;
+                    localStorage.setItem('schoolAppUser', JSON.stringify(user));
+                    showDashboard();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง!',
+                        confirmButtonText: 'ตกลง'
+                    });
+                }
+                return false;
+            }
+        });
+        
+        // Logout
+        $('#logout-btn').on('click', function() {
+            localStorage.removeItem('schoolAppUser');
+            currentUser = null;
+            // Full page reload to reset all states cleanly
+            window.location.reload();
+        });
+
+        // Tab Switching
+        $('.main-tab-btn').on('click', function() {
+            activeMainTab = $(this).data('tab');
+            renderAll();
+        });
+
+        $('.sub-tab-btn').on('click', function() {
+            const type = $(this).data('type');
+            const view = $(this).data('view');
+            activeSubTabs[type] = view;
+            if(view === 'form') {
+                resetForm(type);
+            }
+            renderSubTabView(type);
+        });
+
+        // Add Image Input
+        $('#add-flag-image, #add-homeroom-image').on('click', function() {
+            const containerId = $(this).attr('id').includes('flag') ? 'flag-image-uploads' : 'homeroom-image-uploads';
+            const newInput = `<input type="file" name="images[]" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 mt-3">`;
+            $(`#${containerId}`).append(newInput);
+        });
+
+        // Form Submission
+        $('#flag-log-form, #homeroom-log-form').on('submit', function(e) {
+            e.preventDefault();
+            const formId = $(this).attr('id');
+            const type = formId.includes('flag') ? 'flag' : 'homeroom';
+
+            const newLog = {
+                id: `${type.slice(0, 2)}l${Date.now()}`,
+                userId: currentUser.id,
+                date: $(`#${type}-date`).val(),
+                details: quillInstances[type === 'flag' ? 'mainFlag' : 'mainHomeroom'].root.innerHTML,
+                images: [], // Placeholder for now
+                status: 'pending'
+            };
+            
+            if (type === 'homeroom') {
+                newLog.roomId = $('#homeroom-room').val();
+                if(!newLog.roomId) {
+                     Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกห้องเรียน', 'error');
+                     return;
+                }
+            }
+             if(!newLog.date) {
+                Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกวันที่', 'error');
+                return;
+            }
+
+            mockData[`${type}Logs`].push(newLog);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'บันทึกข้อมูลสำเร็จ!',
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                activeSubTabs[type] = 'dashboard';
+                renderAll();
+            });
+        });
+
+        // Table Action Buttons (Delegated)
+        $('#dashboard-page').on('click', '.action-btn', function() {
+            const id = $(this).data('id');
+            const type = $(this).data('type');
+            const action = $(this).data('action');
+            const log = mockData[`${type}Logs`].find(l => l.id === id);
+
+            if (!log) return;
+            
+            switch(action) {
+                case 'view':
+                    showViewModal(log, type);
+                    break;
+                case 'edit':
+                    showEditModal(log, type);
+                    break;
+                case 'approve':
+                    Swal.fire({
+                        title: 'ยืนยันการอนุมัติ',
+                        text: "คุณต้องการอนุมัติรายการนี้ใช่หรือไม่?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#4ade80',
+                        cancelButtonColor: '#f87171',
+                        confirmButtonText: 'ใช่, อนุมัติเลย!',
+                        cancelButtonText: 'ยกเลิก'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            log.status = 'approved';
+                            renderAll();
+                            Swal.fire('อนุมัติแล้ว!', 'รายการได้รับการอนุมัติเรียบร้อย', 'success');
+                        }
+                    })
+                    break;
+            }
+        });
+        
+        // Modal Handling
+        function showViewModal(log, type) {
+            const user = mockData.users.find(u => u.id === log.userId);
+            const room = type === 'homeroom' ? mockData.rooms.find(r => r.id === log.roomId) : null;
+            const statusBadge = log.status === 'approved' 
+                ? `<span class="bg-green-100 text-green-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded">อนุมัติแล้ว</span>`
+                : `<span class="bg-yellow-100 text-yellow-800 text-sm font-medium me-2 px-2.5 py-0.5 rounded">รออนุมัติ</span>`;
+
+            let content = `
+                <div class="space-y-4">
+                    <div><strong class="font-semibold text-gray-600 w-24 inline-block">วันที่:</strong> ${new Date(log.date).toLocaleDateString('th-TH', { dateStyle: 'full' })}</div>
+                    ${room ? `<div><strong class="font-semibold text-gray-600 w-24 inline-block">ห้อง:</strong> ${room.name}</div>` : ''}
+                    <div><strong class="font-semibold text-gray-600 w-24 inline-block">ผู้บันทึก:</strong> ${user.displayName}</div>
+                    <div><strong class="font-semibold text-gray-600 w-24 inline-block">สถานะ:</strong> ${statusBadge}</div>
+                    <hr>
+                    <div>
+                        <strong class="font-semibold text-gray-600 block mb-2">รายละเอียด:</strong>
+                        <div class="prose max-w-none p-4 bg-gray-50 rounded-lg border">${log.details}</div>
+                    </div>
+                     <div>
+                        <strong class="font-semibold text-gray-600 block mb-2">รูปภาพ:</strong>
+                        <div class="text-gray-500">${log.images.length > 0 ? log.images.join(', ') : 'ไม่มีรูปภาพ'}</div>
+                    </div>
+                </div>
+            `;
+            $('#view-modal-title').text(`รายละเอียด: กิจกรรม${type === 'flag' ? 'หน้าเสาธง' : 'โฮมรูม'}`);
+            $('#view-modal-body').html(content);
+            $('#view-modal').addClass('flex').removeClass('hidden');
+        }
+
+        function showEditModal(log, type) {
+            $('#edit-log-id').val(log.id);
+            $('#edit-log-type').val(type);
+            
+            // Re-initialize flatpickr for the edit modal
+            if(flatpickrInstances.edit) flatpickrInstances.edit.destroy();
+            flatpickrInstances.edit = flatpickr("#edit-date", { locale: "th", dateFormat: "Y-m-d", defaultDate: log.date });
+            
+            quillInstances.edit.root.innerHTML = log.details;
+
+            if (type === 'homeroom') {
+                const editRoomSelect = $('#edit-room');
+                editRoomSelect.empty();
+                mockData.rooms.forEach(room => {
+                    editRoomSelect.append(`<option value="${room.id}">${room.name}</option>`);
+                });
+                editRoomSelect.val(log.roomId);
+                $('#edit-room-container').show();
+            } else {
+                 $('#edit-room-container').hide();
+            }
+
+            $('#edit-image-list').text(log.images.length > 0 ? log.images.join(', ') : 'ไม่มีรูปภาพ');
+            $('#edit-modal').addClass('flex').removeClass('hidden');
+        }
+
+        $('#save-edit-btn').on('click', function() {
+            const id = $('#edit-log-id').val();
+            const type = $('#edit-log-type').val();
+            const log = mockData[`${type}Logs`].find(l => l.id === id);
+
+            if (log) {
+                log.date = $('#edit-date').val();
+                log.details = quillInstances.edit.root.innerHTML;
+                if (type === 'homeroom') {
+                    log.roomId = $('#edit-room').val();
+                }
+                
+                Swal.fire('สำเร็จ!', 'แก้ไขข้อมูลเรียบร้อย', 'success');
+                $('#edit-modal').addClass('hidden').removeClass('flex');
+                renderAll();
+            }
+        });
+        
+        $('.close-modal-btn').on('click', function() {
+            $(this).closest('#view-modal, #edit-modal').addClass('hidden').removeClass('flex');
+        });
+
+        // ========== START THE APP ==========
+        initializeApp();
+    });
+    </script>
+
+</body>
+</html>
